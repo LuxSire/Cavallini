@@ -1,0 +1,279 @@
+/* CavalliniCapital.css */
+
+body,
+html {
+  margin: 0;
+  font-family: Segoe UI, Arial, sans-serif;
+  color: #e2e8f0;
+  background: #0c2748;
+}
+
+.cavallini-capital {
+  padding: 2rem;
+}
+
+/* Header Section */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2rem;
+}
+
+.brand h1 {
+  font-size: 3rem;
+  letter-spacing: 6px;
+  margin: 0;
+  color: #fff;
+}
+
+.brand h2 {
+  font-size: 2rem;
+  margin: 0;
+  color: #fff;
+  font-weight: 300;
+}
+
+.brand hr {
+  border: 0;
+  height: 2px;
+  background: #fff;
+  margin: 6px 0;
+}
+
+.profile {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 6px solid #fff;
+  object-fit: cover;
+}
+
+/* Pitch Section */
+.pitch h3 {
+  margin: 0;
+  color: #9ad2ff;
+  font-weight: 400;
+  letter-spacing: 2px;
+}
+
+.pitch h2 {
+  margin: 4px 0 12px;
+  color: #9ad2ff;
+  font-weight: 300;
+  font-size: 2rem;
+}
+
+.pitch p {
+  max-width: 500px;
+  line-height: 1.5;
+}
+
+/* What We Do Section */
+.what-we-do {
+  margin: 3rem 0;
+  max-width: 500px;
+}
+
+.what-we-do h3 {
+  color: #9ad2ff;
+  font-weight: 300;
+  letter-spacing: 2px;
+}
+
+/* Stats Section */
+.stats {
+  display: flex;
+  justify-content: center;
+  margin: 3rem 0;
+}
+
+.ring {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #64b5f6 0 90deg,
+    #4a90e2 90deg 180deg,
+    #2777d2 180deg 270deg,
+    #155fa0 270deg 360deg
+  );
+}
+
+.ring::after {
+  content: "";
+  position: absolute;
+  inset: 40px;
+  border-radius: 50%;
+  background: #0c2748;
+}
+
+.center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.center h4 {
+  margin: 0 0 6px;
+  color: #9ad2ff;
+  font-weight: 400;
+}
+
+.center small {
+  font-size: 0.8rem;
+}
+
+.stat {
+  position: absolute;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.stat span {
+  display: block;
+  font-size: 0.7rem;
+  color: #cbd5e0;
+}
+
+.stat strong {
+  font-size: 1.4rem;
+  color: #9ad2ff;
+}
+
+.top {
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.right {
+  right: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.left {
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.bottom {
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Returns Table */
+.returns h3 {
+  text-align: center;
+  color: #fff;
+  font-weight: 300;
+  letter-spacing: 2px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px;
+  text-align: center;
+}
+
+th {
+  background: rgba(100, 181, 246, 0.15);
+  color: #9ad2ff;
+}
+
+.year {
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  color: #9ad2ff;
+}
+
+.positive {
+  background: rgba(56, 161, 105, 0.25);
+  color: #48bb78;
+}
+
+.negative {
+  background: rgba(229, 62, 62, 0.25);
+  color: #f56565;
+}
+
+/* Disclaimer */
+footer.disclaimer {
+  margin-top: 3rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+footer h4 {
+  margin: 0 0 0.5rem;
+  color: #9ad2ff;
+  font-weight: 400;
+}
+
+/* Header Section Flex Layout */
+.header-section.flex-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.logo-container {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.strategy-info {
+  flex: 1 1 0;
+}
+.logo.cavallini {
+  width: 120px;
+  height: auto;
+  display: block;
+}
+.main-content.flex-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.what-we-do {
+  flex: 1 1 0;
+}
+
+.stats-container {
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center horizontally */
+  justify-content: center; /* Center vertically if needed */
+}
+
+.stats-circle {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center the stat items horizontally */
+  justify-content: center;
+}
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Adjust spacing as needed */
+}
