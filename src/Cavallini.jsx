@@ -31,17 +31,17 @@ const Cavallini = () => {
     loadCSV(
       dates => setReturnsData(prev => ({ ...prev, dates })),
       returns => setReturnsData(prev => ({ ...prev, returns })),
-      '/Returns.csv'
+        `${import.meta.env.BASE_URL}Returns.csv`
     );
     loadCSV(
       dates => setRFData(prev => ({ ...prev, dates })),
       returns => setRFData(prev => ({ ...prev, returns })),
-      '/RF.csv'
+        `${import.meta.env.BASE_URL}RF.csv`
     );
     loadCSV(
       dates => setSP500Data(prev => ({ ...prev, dates })),
       returns => setSP500Data(prev => ({ ...prev, returns })),
-      '/SP500.csv'
+        `${import.meta.env.BASE_URL}SP500.csv`
     );
   }, []);
 

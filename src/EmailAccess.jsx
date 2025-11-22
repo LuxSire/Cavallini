@@ -9,8 +9,7 @@ const EmailAccess = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/emails.csv');
-      if (!res.ok) throw new Error('Could not load emails list');
+      const res = await fetch(`${import.meta.env.BASE_URL}emails.csv`);
       const text = await res.text();
       // Split by line, trim, and check for the email
       const emails = text.split(/\r?\n/).map(line => line.trim().toLowerCase()).filter(Boolean);
