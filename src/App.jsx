@@ -1,17 +1,18 @@
 
-import './App.css'
-import Cavallini from './Cavallini' // Import the component
+import './App.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import EmailAccess from './EmailAccess';
+import Cavallini from './Cavallini';
 
 function App() {
-
   return (
-    <>
-      <div className="card">
-        
-      </div>
-      <Cavallini /> {/* Render the CavalliniCapital component */}
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<EmailAccess />} />
+        <Route path="/cavallini" element={<Cavallini />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App 
+export default App;

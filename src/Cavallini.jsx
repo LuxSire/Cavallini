@@ -1,86 +1,56 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import  { useState, useEffect } from 'react';
 import './Style.css';
-import Papa from 'papaparse';
+import BrandLogo from './BrandLogo';
+import {
+  sanitizeNumber,
+  calculateMonthlyVar,
+  calculateDailyVar,
+  calculateSharpeRatio,
+  calculateSortinoRatio,
+  calculateCorrelation,
+  getSharpeRatioWithRF,
+  calculateMonthlyReturns,
+  formatTableData,
+  loadCSV
+} from './Helpers';
 
-// ---- Helper / Calculation Functions ----
-const sanitizeNumber = (val) => {
-  if (val == null) return NaN;
-  if (typeof val === 'number') return val;
-  if (typeof val !== 'string') return NaN;
-  const cleaned = val.replace(/[^0-9+\-.]/g, '');
-  if (!cleaned || cleaned === '-' || cleaned === '+') return NaN;
-  return parseFloat(cleaned);
-};
 
-const calculateMonthlyVar = (monthly, confidenceLevel = 0.95) => {
-  const sorted = [...monthly].sort((a, b) => a - b);
-  const index = Math.floor((1 - confidenceLevel) * sorted.length);
-  const varValue = sorted[index];
-  return varValue?.toFixed(2) || '0';
-};
-
-const calculateDailyVar = (daily, confidenceLevel = 0.95) => {
-  const sorted = [...daily].sort((a, b) => a - b);
-  const index = Math.floor((1 - confidenceLevel) * sorted.length);
-  const varValue = sorted[index];
-  return varValue?.toFixed(2) || '0';
-};
-
-const calculateBeta = () => '0.30';
-const calculateCorrelation = () => '0.62';
-
-const calculateSharpeRatio = (monthly) => {
-  if (!monthly?.length) return '0';
-  const meanMonthly = monthly.reduce((a, b) => a + b, 0) / monthly.length;
-  const varianceMonthly = monthly.reduce((a, b) => a + Math.pow(b - meanMonthly, 2), 0) / monthly.length;
-  const stdDevMonthly = Math.sqrt(varianceMonthly);
-  const annualizedReturn = meanMonthly * 12;
-  const annualizedStdDev = stdDevMonthly * Math.sqrt(12);
-  return (annualizedReturn / annualizedStdDev).toFixed(2);
-};
-
-const calculateMonthlyReturns = (dates, dailyReturns) => {
-  const monthlyGroups = {};
-  dates.forEach((date, i) => {
-    // date guaranteed ISO YYYY-MM-DD
-    const [year, month] = date.split('-');
-    const key = `${year}-${month}`;
-    const dailyReturnDecimal = dailyReturns[i] / 1; // bps -> decimal
-    if (!monthlyGroups[key]) monthlyGroups[key] = [];
-    monthlyGroups[key].push(dailyReturnDecimal);
-  });
-  return Object.entries(monthlyGroups).map(([period, returns]) => {
-    const compounded = returns.reduce((acc, r) => acc * (1 + r), 1) - 1;
-    return { period, return: compounded * 100 }; // percent
-  });
-};
-
-const formatTableData = (monthlyReturnsData) => {
-  const yearGroups = {};
-  monthlyReturnsData.forEach(({ period, return: ret }) => {
-    const [year, month] = period.split('-');
-    if (!yearGroups[year]) {
-      yearGroups[year] = { year, jan:'', feb:'', mar:'', apr:'', may:'', jun:'', jul:'', aug:'', sep:'', oct:'', nov:'', dec:'', total:'' };
-    }
-    const monthNames = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-    const idx = parseInt(month, 10) - 1;
-    const key = monthNames[idx];
-    if (key) yearGroups[year][key] = `${ret.toFixed(2)}%`;
-  });
-  Object.values(yearGroups).forEach(yearData => {
-    const vals = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
-      .map(m => yearData[m])
-      .filter(Boolean)
-      .map(v => parseFloat(v));
-    if (vals.length) {
-      const total = vals.reduce((acc, v) => acc * (1 + v/100), 1) - 1;
-      yearData.total = `${(total * 100).toFixed(2)}%`;
-    }
-  });
-  return Object.values(yearGroups).sort((a,b)=> a.year.localeCompare(b.year));
-};
 
 const Cavallini = () => {
+  // Get Sharpe, Sortino, and Correlation to S&P directly from Helpers global state
+  const sharpeRatio = calculateSharpeRatio();
+  const sortinoRatio = calculateSortinoRatio();
+  const correlationSP500 = calculateCorrelation();
+  // State for each dataset
+  const [returnsData, setReturnsData] = useState({ dates: [], returns: [] });
+  const [rfData, setRFData] = useState({ dates: [], returns: [] });
+  const [sp500Data, setSP500Data] = useState({ dates: [], returns: [] });
+
+  // Load all CSVs on mount
+  useEffect(() => {
+    loadCSV(
+      dates => setReturnsData(prev => ({ ...prev, dates })),
+      returns => setReturnsData(prev => ({ ...prev, returns })),
+      '/Returns.csv'
+    );
+    loadCSV(
+      dates => setRFData(prev => ({ ...prev, dates })),
+      returns => setRFData(prev => ({ ...prev, returns })),
+      '/RF.csv'
+    );
+    loadCSV(
+      dates => setSP500Data(prev => ({ ...prev, dates })),
+      returns => setSP500Data(prev => ({ ...prev, returns })),
+      '/SP500.csv'
+    );
+  }, []);
+
+  // Debug: Log loaded datasets
+  useEffect(() => {
+    console.log('[Cavallini] Returns:', returnsData);
+    console.log('[Cavallini] RF:', rfData);
+    console.log('[Cavallini] SP500:', sp500Data);
+  }, [returnsData, rfData, sp500Data]);
   // State hooks
   const [performanceData, setPerformanceData] = useState([]);
   const [dailyReturns, setDailyReturns] = useState([]);
@@ -94,117 +64,15 @@ const Cavallini = () => {
     inceptionDate: 'Jan. 16th, 2024'
   });
 
-  // CSV loading function
-  const loadReturnsCSV = useCallback(() => {
-    console.log('[loadReturnsCSV] Starting CSV load...');
-    // Expect user to place Returns.csv under public/ or public/assets/ so dev server serves it verbatim.
-    const candidateUrls = [
-      '/Returns.csv',    // fallback if server exposes /public prefix
-      '/src/assets/Returns.csv' // legacy path fallback
-
-    ];
-
-    const tryFetch = (i = 0) => {
-      if (i >= candidateUrls.length) {
-        console.error('[loadReturnsCSV] All public path candidates failed. Falling back to inline sample data.');
-        parseInlineFallback();
-        return;
-      }
-      const url = candidateUrls[i];
-      console.log(`[loadReturnsCSV] Attempting fetch: ${url}`);
-      fetch(url, { cache: 'no-store' })
-        .then(r => {
-          console.log('[loadReturnsCSV] Response status:', r.status, 'ok:', r.ok);
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          return r.text();
-        })
-        .then(csvText => {
-          const trimmedStart = csvText.trimStart().slice(0,200);
-          if (/^<!DOCTYPE html>/i.test(trimmedStart) || /<html/i.test(trimmedStart)) {
-            console.warn(`[loadReturnsCSV] HTML received at ${url}. Trying next path.`);
-            tryFetch(i+1);
-            return;
-          }
-          console.log('[loadReturnsCSV] Raw CSV length:', csvText.length);
-          Papa.parse(csvText, {
-            header: false,
-            skipEmptyLines: true,
-            complete: (results) => {
-              console.log('[loadReturnsCSV] Papa.parse complete. Row count (incl header):', results.data.length);
-              if (!results.data.length) { console.warn('[loadReturnsCSV] No rows.'); return; }
-              const data = results.data.filter(r => r.some(c => c && c.trim() !== ''));
-              // If header row exists, skip it
-              let rows = data;
-              if (rows.length && (rows[0][0].toLowerCase().includes('date') || rows[0][1].toLowerCase().includes('return') || rows[0][1].toLowerCase().includes('value'))) {
-                rows = rows.slice(1);
-              }
-              const parsedDates = [];
-              const parsedDailyReturns = [];
-              let euDateConvertedCount = 0;
-              rows.forEach(row => {
-                if (!row || row.length < 2) return;
-                let raw = (row[0]||'').trim();
-                let iso;
-                if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(raw)) iso = raw;
-                else if (/^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$/.test(raw)) { const [dd,mm,yyyy]=raw.split('.'); iso=`${yyyy}-${mm}-${dd}`; euDateConvertedCount++; }
-                else return;
-                let value = sanitizeNumber(row[1]);
-                if (isNaN(value)) return;
-                parsedDates.push(iso);
-                parsedDailyReturns.push(value);
-              });
-              if (euDateConvertedCount) console.log(`[loadReturnsCSV] Converted ${euDateConvertedCount} EU date formats.`);
-              console.log('[loadReturnsCSV] Parsed dates length:', parsedDates.length);
-              console.log('[loadReturnsCSV] Parsed daily returns length:', parsedDailyReturns.length);
-              const nanCount = parsedDailyReturns.filter(v=>isNaN(v)).length;
-              if (nanCount) console.warn(`[loadReturnsCSV] NaN daily returns count: ${nanCount}`);
-              setDates(parsedDates);
-              setDailyReturns(parsedDailyReturns);
-            },
-            error: (err) => {
-              console.error('[loadReturnsCSV] Papa.parse error:', err);
-              tryFetch(i+1);
-            }
-          });
-        })
-        .catch(err => {
-          console.error(`[loadReturnsCSV] Fetch failed for ${url}:`, err.message);
-          tryFetch(i+1);
-        });
-    };
-    tryFetch();
-  }, []);
 
   // OPTIONAL: inline fallback dataset (first few rows) to allow UI to render if all fetches fail.
-  const parseInlineFallback = () => {
-    const inlineCsv = `Date,Start Balance,Gain / Loss,End Balance ,Basis Points ,Daily Gain / Loss\n2024-01-10,3'000'000.00,-0.05,2'999'999.95,-0,-0.00%\n2024-01-11,2'999'999.95,1.08,3'000'001.03,0,0.00%\n2024-01-12,3'000'001.03,0.48,3'000'001.51,0,0.00%\n2024-01-16,3'000'001.51,4'668.21,3'004'669.72,16,0.16%\n2024-01-17,3'004'669.72,126.28,3'004'796.00,0,0.00%`;
-    console.warn('[loadReturnsCSV] Using inline fallback CSV data.');
-    Papa.parse(inlineCsv, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const parsedDates = [];
-        const parsedDailyReturns = [];
-        results.data.forEach(row => {
-          const dateStr = row['Date'];
-            if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(dateStr)) return;
-            let basisPoints = sanitizeNumber(row['Basis Points ']);
-            let dailyPercent = sanitizeNumber(row['Daily Gain / Loss']);
-            if (isNaN(basisPoints) && !isNaN(dailyPercent)) basisPoints = dailyPercent * 100;
-            if (isNaN(basisPoints)) return;
-            parsedDates.push(dateStr);
-            parsedDailyReturns.push(basisPoints);
-        });
-        setDates(parsedDates);
-        setDailyReturns(parsedDailyReturns);
-      }
-    });
-  };
 
   // Effect hooks
+  // Use returnsData for main calculations
   useEffect(() => {
-    loadReturnsCSV();
-  }, [loadReturnsCSV]);
+    setDates(returnsData.dates);
+    setDailyReturns(returnsData.returns);
+  }, [returnsData]);
 
   useEffect(() => {
     console.log('[effect dates/dailyReturns] Triggered. dates.length =', dates.length, 'dailyReturns.length =', dailyReturns.length);
@@ -255,7 +123,8 @@ const Cavallini = () => {
       bestMonth: bestMonth ? `${bestMonth.period}: ${bestMonth.return.toFixed(2)}%` : 'N/A',
       worstMonth: worstMonth ? `${worstMonth.period}: ${worstMonth.return.toFixed(2)}%` : 'N/A',
       perfSinceInception,
-      perfAnnualized
+      perfAnnualized,
+      inceptionDate: fundStats.inceptionDate || 'Jan. 16th, 2024'
     };
     console.log('[effect monthlyReturns] Computed fund stats:', stats);
     setFundStats(stats);
@@ -266,10 +135,7 @@ const Cavallini = () => {
       {/* Header Section */}
       <div className="header-section">
         <div className="brand-container">
-          <div className="brand-logo">
-            <h1>CAVALLINI CAPITAL</h1>
-            <div className="brand-line"></div>
-          </div>
+          <BrandLogo />
         </div>
 
 <div className="header-section flex-row">
@@ -294,7 +160,56 @@ const Cavallini = () => {
 
       {/* Main Content */}
 <div className="main-content flex-row">
-  {/* What We Do Section */}
+  {/* Statistics Section - now first */}
+  <div className="what-we-do" style={{ minWidth: '320px', marginRight: '32px' }}>
+    <div className="center-stats">
+      <h3>IMPORTANT STATISTICS</h3>
+    </div>
+    <div className="stats-circle">
+      <div className="stat-item inception-date">
+        <span className="stat-label">Inception Date:</span>
+        <span className="stat-value">{fundStats.inceptionDate || 'Jan. 16th, 2024'}</span>
+      </div>
+      <div className="stat-item best-month">
+        <span className="stat-label">Best Month</span>
+        <span className="stat-value">{fundStats.bestMonth}</span>
+      </div>
+      <div className="stat-item worst-month">
+        <span className="stat-label">Worst Month</span>
+        <span className="stat-value">{fundStats.worstMonth}</span>
+      </div>
+      <div className="stat-item perf-since-inception">
+        <span className="stat-label">Performance Since Inception</span>
+        <span className="stat-value">{fundStats.perfSinceInception}</span>
+      </div>
+      <div className="stat-item perf-annualized">
+        <span className="stat-label">Performance Annualized</span>
+        <span className="stat-value">{fundStats.perfAnnualized}</span>
+      </div>
+      <div className="stat-item sharpe-ratio">
+        <span className="stat-label">Sharpe Ratio</span>
+        <span className="stat-value">{sharpeRatio}</span>
+      </div>
+      <div className="stat-item sortino-ratio">
+        <span className="stat-label">Sortino Ratio</span>
+        <span className="stat-value">{sortinoRatio}</span>
+      </div>
+      <div className="stat-item correlation-sp500">
+        <span className="stat-label">Correlation to S&amp;P</span>
+        <span className="stat-value">{correlationSP500}</span>
+      </div>
+      <div className="stat-item daily-var">
+        <span className="stat-label">Daily VAR:</span>
+        <span className="stat-value">{Number(fundStats.dailyVar).toFixed(2)}%</span>
+      </div>
+      <div className="stat-item monthly-var">
+        <span className="stat-label">Monthly VAR:</span>
+        <span className="stat-value">{Number(fundStats.monthlyVar).toFixed(2)}%</span>
+      </div>
+      </div>
+  </div>
+
+  {/* What We Do Section - now second */}
   <div className="what-we-do">
     <h3>WHAT WE DO:</h3>
     <p>
@@ -308,42 +223,6 @@ const Cavallini = () => {
       preservation of capital and 
       sustainable growth for our investors.
     </p>
-  </div>
-
-  {/* Statistics Section */}
-  <div className="what-we-do">
-    <div className="center-stats">
-      <h3>IMPORTANT STATISTICS</h3>
-      <p>Inception Date:</p>
-      <p>{fundStats.inceptionDate}</p>
-    </div>
-      <div className="stats-circle">
-        <div className="stat-item daily-var">
-          <span className="stat-label">Daily VAR:</span>
-          <span className="stat-value">{Number(fundStats.dailyVar).toFixed(2)}%</span>
-        </div>
-        <div className="stat-item monthly-var">
-          <span className="stat-label">Monthly VAR:</span>
-          <span className="stat-value">{Number(fundStats.monthlyVar).toFixed(2)}%</span>
-        </div>
-        {/* ...existing code... */}
-        <div className="stat-item best-month">
-          <span className="stat-label">Best Month</span>
-          <span className="stat-value">{fundStats.bestMonth}</span>
-        </div>
-        <div className="stat-item worst-month">
-          <span className="stat-label">Worst Month</span>
-          <span className="stat-value">{fundStats.worstMonth}</span>
-        </div>
-        <div className="stat-item perf-since-inception">
-          <span className="stat-label">Performance Since Inception</span>
-          <span className="stat-value">{fundStats.perfSinceInception}</span>
-        </div>
-        <div className="stat-item perf-annualized">
-          <span className="stat-label">Performance Annualized</span>
-          <span className="stat-value">{fundStats.perfAnnualized}</span>
-        </div>
-      </div>
   </div>
 </div>
 
