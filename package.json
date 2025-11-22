@@ -1,13 +1,16 @@
 {
   "name": "cavallini",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://LuxSire.github.io/Cavallini/",
   "scripts": {
     "start": "vite --open",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "vite build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -29,6 +32,7 @@
     "globals": "^16.4.0",
     "process": "^0.11.10",
     "util": "^0.12.5",
-    "vite": "^5.4.9"
+    "vite": "^5.4.9",
+    "gh-pages": "^5.0.0"
   }
 }
