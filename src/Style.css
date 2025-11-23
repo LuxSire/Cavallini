@@ -6,6 +6,11 @@ html {
   font-family: Segoe UI, Arial, sans-serif;
   color: #e2e8f0;
   background: #0c2748;
+  min-height: 100%; /* Ensure the background covers the full viewport height */
+}
+
+body {
+  background: #0c2748; /* Ensure the background color is applied to the full screen */
 }
 
 .cavallini-capital {

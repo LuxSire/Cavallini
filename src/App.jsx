@@ -8,8 +8,8 @@ function App() {
   return (
     <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/Cavallini' : '/'}>
       <Routes>
-        <Route path="/" element={<EmailAccess />} />
-        <Route path="/cavallini" element={<Cavallini />} />
+        <Route path="/Cavallini/" element={<EmailAccess />} />
+        <Route path="/performance" element={<Cavallini />} />
       </Routes>
     </BrowserRouter>
   );

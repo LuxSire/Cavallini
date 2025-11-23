@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
 
@@ -14,7 +14,7 @@ const EmailAccess = () => {
       // Split by line, trim, and check for the email
       const emails = text.split(/\r?\n/).map(line => line.trim().toLowerCase()).filter(Boolean);
       if (emails.includes(email.trim().toLowerCase())) {
-        navigate('/cavallini');
+        navigate('/performance');
       } else {
         alert('This email is not authorized. Please request approval');
       }
@@ -25,9 +25,9 @@ const EmailAccess = () => {
 
 
   class ApprovalEmail {
-    static recipient = 'info@luxsire.com';
+    static recipient = 'greg@cavallinicapital.com';
     static subject = 'Access Request';
-  static body = 'Dear LuxSire,\n\nI am interested in your products and would like to request access to your website.';
+  static body = 'Dear Mr Cavallini,\n\nI am interested in your products and would like to request access to your website.';
 
     static getMailtoLink() {
       const subject = encodeURIComponent(ApprovalEmail.subject);
@@ -59,13 +59,12 @@ const EmailAccess = () => {
             Ask to Get Approved
           </a>
 
-          <a
-            href="#"
-            onClick={handleSubmit}
-            style={{ color: '#1976d2', textDecoration: 'underline', cursor: 'pointer' }}
+          <button
+            type="submit"
+            style={{ color: '#1976d2', textDecoration: 'underline', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
           >
             Submit
-          </a>
+          </button>
         </div>
       </form>
     </div>
