@@ -6,9 +6,9 @@ import Cavallini from './Cavallini';
 
 function App() {
   return (
-    <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/Cavallini' : '/'}>
+    <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/Cavallini' : '/Cavallini'}>
       <Routes>
-        <Route path="/Cavallini/" element={<EmailAccess />} />
+        <Route path="/" element={<EmailAccess />} />
         <Route path="/performance" element={<Cavallini />} />
       </Routes>
     </BrowserRouter>

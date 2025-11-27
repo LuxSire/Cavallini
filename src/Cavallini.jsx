@@ -18,9 +18,6 @@ import {
 
 const Cavallini = () => {
   // Get Sharpe, Sortino, and Correlation to S&P directly from Helpers global state
-  const sharpeRatio = calculateSharpeRatio();
-  const sortinoRatio = calculateSortinoRatio();
-  const correlationSP500 = calculateCorrelation();
   // State for each dataset
   const [returnsData, setReturnsData] = useState({ dates: [], returns: [] });
   const [rfData, setRFData] = useState({ dates: [], returns: [] });
@@ -130,6 +127,11 @@ const Cavallini = () => {
     setFundStats(stats);
   }, [monthlyReturns, dailyReturns]);
 
+  // Calculate Sharpe, Sortino, and Correlation to S&P using monthlyReturns
+  const sharpeRatio = calculateSharpeRatio(monthlyReturns,sp500Data,rfData);
+  const sortinoRatio = calculateSortinoRatio(monthlyReturns,sp500Data);
+  const correlationSP500 = calculateCorrelation(monthlyReturns, sp500Data);
+
   return (
     <div className="cavallini-capital">
       {/* Header Section */}
@@ -152,7 +154,7 @@ const Cavallini = () => {
       meet client demand for reduced volatility, he developed a 
       proprietary systematic Long / Short Equities Strategy, allowing the 
       use of responsible leverage to maximize returns. He is currently 
-      and independent RIA in the states of Florida and Colorado.
+      anindependent RIA in the states of Florida and Colorado.
     </p>
   </div>
 </div>
@@ -280,8 +282,8 @@ const Cavallini = () => {
         <p>
           Greg Cavallini provides investment advisory services through Cavallini Management, LLC, ("Cavallini"), an investment adviser, registered in the 
           State of Florida, which does not imply endorsement or approval. Cavallini does not provide legal or tax advice. Investing involves risks, including 
-          loss of principal. Past performance does not guarantee future results. For additional important information regarding Cavallini please view 
-          Cavallini's ADV Brochure, found here: https://adviserinfo.sec.gov/firm/summary/305058
+          loss of principal. Past performance does not guarantee future results. For additional important information regarding Cavallini Capital please view 
+          Cavallini Capital's ADV Brochure, found here: https://adviserinfo.sec.gov/firm/summary/305058
         </p>
       </div>
     </div>

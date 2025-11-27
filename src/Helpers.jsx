@@ -1,33 +1,42 @@
 // Calculate correlation between monthly returns of Returns.csv and SP500.csv
-export const calculateCorrelation = () => {
-  if (!Returns.dates.length || !Returns.returns.length) {
-    loadCSV(
-      dates => Returns.dates = dates,
-      returns => Returns.returns = returns,
-      '/Returns.csv'
-    );
-    return 'Loading Returns...';
+export const calculateCorrelation = (monthlyReturnsArr = null, sp500Data = null) => {
+  // Use passed monthlyReturnsArr if available, otherwise calculate
+  if (!monthlyReturnsArr) {
+    if (!Returns.dates.length || !Returns.returns.length) {
+      loadCSV(
+        dates => Returns.dates = dates,
+        returns => Returns.returns = returns,
+        '/Returns.csv'
+      );
+      return 'Loading Returns...';
+    }
+    monthlyReturnsArr = calculateMonthlyReturns(Returns.dates, Returns.returns);
   }
-  if (!SP500.dates.length || !SP500.returns.length) {
-    loadCSV(
-      dates => SP500.dates = dates,
-      returns => SP500.returns = returns,
-      '/SP500.csv'
-    );
-    return 'Loading SP500...';
+  let monthlySP500Arr;
+  if (sp500Data && sp500Data.dates && sp500Data.returns) {
+    monthlySP500Arr = sp500Data.dates.map((date, i) => ({ period: date.slice(0,7), return: sp500Data.returns[i] }));
+  } else {
+    if (!SP500.dates.length || !SP500.returns.length) {
+      loadCSV(
+        dates => SP500.dates = dates,
+        returns => SP500.returns = returns,
+        '/SP500.csv'
+      );
+      return 'Loading SP500...';
+    }
+    monthlySP500Arr = SP500.dates.map((date, i) => ({ period: date.slice(0,7), return: SP500.returns[i] }));
   }
-  // Calculate monthly returns for both datasets
-  const monthlyReturnsArr = calculateMonthlyReturns(Returns.dates, Returns.returns);
-  const monthlySP500Arr = calculateMonthlyReturns(SP500.dates, SP500.returns);
+  console.log('[Helpers.calculateCorrelation] monthlyReturnsArr:', monthlyReturnsArr);
+  console.log('[Helpers.calculateCorrelation] monthlySP500Arr:', monthlySP500Arr);
   // Map period to return for easy lookup
   const returnsMap = Object.fromEntries(monthlyReturnsArr.map(r => [r.period, r.return]));
   const sp500Map = Object.fromEntries(monthlySP500Arr.map(r => [r.period, r.return]));
-  // Find common periods
-  const commonPeriods = Object.keys(returnsMap).filter(period => period in sp500Map);
-  if (!commonPeriods.length) return 'No common periods';
-  // Build arrays of returns for correlation
-  const x = commonPeriods.map(period => returnsMap[period]);
-  const y = commonPeriods.map(period => sp500Map[period]);
+  // Build arrays of returns for correlation using the length of the two maps
+  const periods = Object.keys(returnsMap);
+  const x = periods.map(period => returnsMap[period]);
+  const y = periods.map((period, i) => sp500Map[period] !== undefined ? sp500Map[period] : sp500Map[Object.keys(sp500Map)[i]]);
+  console.log('[Helpers.calculateCorrelation] x:', x);
+  console.log('[Helpers.calculateCorrelation] y:', y);
   // Calculate correlation
   const n = x.length;
   const meanX = x.reduce((a, b) => a + b, 0) / n;
@@ -36,33 +45,41 @@ export const calculateCorrelation = () => {
   const stdX = Math.sqrt(x.reduce((acc, xi) => acc + Math.pow(xi - meanX, 2), 0) / n);
   const stdY = Math.sqrt(y.reduce((acc, yi) => acc + Math.pow(yi - meanY, 2), 0) / n);
   const correlation = stdX && stdY ? (covXY / (stdX * stdY)) : 0;
+  console.log('[Helpers.calculateCorrelation] correlation:', correlation);
   return correlation.toFixed(2);
 };
 // Sortino ratio using global Returns and RF
-export const calculateSortinoRatio = () => {
-  if (!Returns.dates.length || !Returns.returns.length) {
-    loadCSV(
-      dates => Returns.dates = dates,
-      returns => Returns.returns = returns,
-      '/Returns.csv'
-    );
-    return 'Loading Returns...';
+export const calculateSortinoRatio = (monthlyReturnsArr = null, rfReturnsArr = null) => {
+  if (!monthlyReturnsArr) {
+    if (!Returns.dates.length || !Returns.returns.length) {
+      loadCSV(
+        dates => Returns.dates = dates,
+        returns => Returns.returns = returns,
+        '/Returns.csv'
+      );
+      return 'Loading Returns...';
+    }
+    monthlyReturnsArr = calculateMonthlyReturns(Returns.dates, Returns.returns);
   }
-  if (!RF.returns.length) {
-    loadCSV(
-      dates => RF.dates = dates,
-      returns => RF.returns = returns,
-      '/RF.csv'
-    );
-    return 'Loading RF...';
+  let rfAvg;
+  if (rfReturnsArr && rfReturnsArr.length) {
+    rfAvg = rfReturnsArr.reduce((a, b) => a + b, 0) / rfReturnsArr.length / 12;
+  } else {
+    if (!RF.returns.length) {
+      loadCSV(
+        dates => RF.dates = dates,
+        returns => RF.returns = returns,
+        '/RF.csv'
+      );
+      return 'Loading RF...';
+    }
+    rfAvg = RF.returns.reduce((a, b) => a + b, 0) / RF.returns.length / 12;
   }
-  const monthlyReturnsArr = calculateMonthlyReturns(Returns.dates, Returns.returns);
   const monthly = monthlyReturnsArr.map(r => r.return);
-  const rfAvg = RF.returns.length ? RF.returns.reduce((a, b) => a + b, 0) / RF.returns.length : 0;
   if (!monthly.length) return '0';
   const meanMonthly = monthly.reduce((a, b) => a + b, 0) / monthly.length;
   const excessReturn = meanMonthly - rfAvg;
-  // Downside deviation
+  // Downside deviation (volatility of returns below rfAvg)
   const downsideReturns = monthly.filter(r => r < rfAvg);
   const downsideDeviation = Math.sqrt(
     downsideReturns.reduce((acc, r) => acc + Math.pow(r - rfAvg, 2), 0) / (downsideReturns.length || 1)
@@ -70,43 +87,37 @@ export const calculateSortinoRatio = () => {
   const annualizedExcessReturn = excessReturn * 12;
   const annualizedDownsideDev = downsideDeviation * Math.sqrt(12);
   const result = (annualizedDownsideDev === 0 ? 0 : (annualizedExcessReturn / annualizedDownsideDev)).toFixed(2);
-  console.log('[Helpers.calculateSortinoRatio] output:', result);
+  
   return result;
 };
 import Papa from 'papaparse';
 
 // Accepts candidateUrls array or single string for flexible CSV loading
 export const loadCSV = (setDates, setDailyReturns, candidateUrl = '/Returns.csv') => {
-  console.log('[loadCSV] Starting CSV load...');
+  
   // Accepts either a string or array of strings
   const candidateUrls = Array.isArray(candidateUrl) ? candidateUrl : [candidateUrl];
   const tryFetch = (i = 0) => {
     if (i >= candidateUrls.length) {
-      console.error('[loadReturnsCSV] All public path candidates failed. Falling back to inline sample data.');
       parseInlineFallback(setDates, setDailyReturns);
       return;
     }
     const url = candidateUrls[i];
-    console.log(`[loadReturnsCSV] Attempting fetch: ${url}`);
     fetch(url, { cache: 'no-store' })
       .then(r => {
-        console.log('[loadReturnsCSV] Response status:', r.status, 'ok:', r.ok);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.text();
       })
       .then(csvText => {
         const trimmedStart = csvText.trimStart().slice(0,200);
         if (/^<!DOCTYPE html>/i.test(trimmedStart) || /<html/i.test(trimmedStart)) {
-          console.warn(`[loadReturnsCSV] HTML received at ${url}. Trying next path.`);
           tryFetch(i+1);
           return;
         }
-        console.log('[loadReturnsCSV] Raw CSV length:', csvText.length);
         Papa.parse(csvText, {
           header: false,
           skipEmptyLines: true,
           complete: (results) => {
-            console.log('[loadReturnsCSV] Papa.parse complete. Row count (incl header):', results.data.length);
             if (!results.data.length) { console.warn('[loadReturnsCSV] No rows.'); return; }
             const data = results.data.filter(r => r.some(c => c && c.trim() !== ''));
             let rows = data;
@@ -135,21 +146,17 @@ export const loadCSV = (setDates, setDailyReturns, candidateUrl = '/Returns.csv'
               parsedDailyReturns.push(value);
             });
             if (euDateConvertedCount) console.log(`[loadReturnsCSV] Converted ${euDateConvertedCount} EU date formats.`);
-            console.log('[loadReturnsCSV] Parsed dates length:', parsedDates.length);
-            console.log('[loadReturnsCSV] Parsed daily returns length:', parsedDailyReturns.length);
             const nanCount = parsedDailyReturns.filter(v=>isNaN(v)).length;
             if (nanCount) console.warn(`[loadReturnsCSV] NaN daily returns count: ${nanCount}`);
             setDates(parsedDates);
             setDailyReturns(parsedDailyReturns);
           },
           error: (err) => {
-            console.error('[loadReturnsCSV] Papa.parse error:', err);
             tryFetch(i+1);
           }
         });
       })
       .catch(err => {
-        console.error(`[loadReturnsCSV] Fetch failed for ${url}:`, err.message);
         tryFetch(i+1);
       });
   };
@@ -230,60 +237,66 @@ export const formatTableData = (monthlyReturnsData) => {
 // Helper functions for Cavallini performance calculations
 
 export const sanitizeNumber = (val) => {
-  console.log('[Helpers.sanitizeNumber] input:', val);
+  
   if (val == null) return NaN;
   if (typeof val === 'number') return val;
   if (typeof val !== 'string') return NaN;
   const cleaned = val.replace(/[^0-9+\-.]/g, '');
   if (!cleaned || cleaned === '-' || cleaned === '+') return NaN;
   const result = parseFloat(cleaned);
-  console.log('[Helpers.sanitizeNumber] output:', result);
+  
   return result;
 };
 
 export const calculateMonthlyVar = (monthly, confidenceLevel = 0.95) => {
-  console.log('[Helpers.calculateMonthlyVar] input:', monthly);
+  
   const sorted = [...monthly].sort((a, b) => a - b);
   const index = Math.floor((1 - confidenceLevel) * sorted.length);
   const varValue = sorted[index];
   const result = varValue?.toFixed(2) || '0';
-  console.log('[Helpers.calculateMonthlyVar] output:', result);
+  
   return result;
 };
 
 export const calculateDailyVar = (daily, confidenceLevel = 0.95) => {
-  console.log('[Helpers.calculateDailyVar] input:', daily);
+  
   const sorted = [...daily].sort((a, b) => a - b);
   const index = Math.floor((1 - confidenceLevel) * sorted.length);
   const varValue = sorted[index];
   const result = varValue?.toFixed(2) || '0';
-  console.log('[Helpers.calculateDailyVar] output:', result);
+  
   return result;
 };
 
 // Sharpe ratio using global Returns and RF
-export const calculateSharpeRatio = () => {
-  // If Returns or RF are empty, load them
-  if (!Returns.dates.length || !Returns.returns.length) {
-    loadCSV(
-      dates => Returns.dates = dates,
-      returns => Returns.returns = returns,
-      '/Returns.csv'
-    );
-    return 'Loading Returns...';
+export const calculateSharpeRatio = (monthlyReturnsArr = null, sp500ReturnsArr = null, rfReturnsArr = null) => {
+  // Use passed monthlyReturnsArr if available, otherwise calculate
+  if (!monthlyReturnsArr) {
+    if (!Returns.dates.length || !Returns.returns.length) {
+      loadCSV(
+        dates => Returns.dates = dates,
+        returns => Returns.returns = returns,
+        '/Returns.csv'
+      );
+      return 'Loading Returns...';
+    }
+    monthlyReturnsArr = calculateMonthlyReturns(Returns.dates, Returns.returns);
   }
-  if (!RF.returns.length) {
-    loadCSV(
-      dates => RF.dates = dates,
-      returns => RF.returns = returns,
-      '/RF.csv'
-    );
-    return 'Loading RF...';
+  let rfAvg;
+  if (rfReturnsArr && rfReturnsArr.length) {
+    rfAvg = rfReturnsArr.reduce((a, b) => a + b, 0) / rfReturnsArr.length / 12;
+  } else {
+    if (!RF.returns.length) {
+      loadCSV(
+        dates => RF.dates = dates,
+        returns => RF.returns = returns,
+        '/RF.csv'
+      );
+      return 'Loading RF...';
+    }
+    rfAvg = RF.returns.reduce((a, b) => a + b, 0) / RF.returns.length / 12;
   }
-  // Calculate monthly returns from Returns
-  const monthlyReturnsArr = calculateMonthlyReturns(Returns.dates, Returns.returns);
   const monthly = monthlyReturnsArr.map(r => r.return);
-  const rfAvg = RF.returns.length ? RF.returns.reduce((a, b) => a + b, 0) / RF.returns.length : 0;
   if (!monthly.length) return '0';
   const meanMonthly = monthly.reduce((a, b) => a + b, 0) / monthly.length;
   const excessReturn = meanMonthly - rfAvg;
@@ -292,7 +305,6 @@ export const calculateSharpeRatio = () => {
   const annualizedExcessReturn = excessReturn * 12;
   const annualizedStdDev = stdDevMonthly * Math.sqrt(12);
   const result = (annualizedStdDev === 0 ? 0 : (annualizedExcessReturn / annualizedStdDev)).toFixed(2);
-  console.log('[Helpers.calculateSharpeRatio] output:', result);
   return result;
 };
 
