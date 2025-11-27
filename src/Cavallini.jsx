@@ -154,7 +154,7 @@ const Cavallini = () => {
       meet client demand for reduced volatility, he developed a 
       proprietary systematic Long / Short Equities Strategy, allowing the 
       use of responsible leverage to maximize returns. He is currently 
-      anindependent RIA in the states of Florida and Colorado.
+      an independent RIA in the states of Florida and Colorado.
     </p>
   </div>
 </div>
