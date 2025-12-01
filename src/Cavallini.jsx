@@ -173,23 +173,23 @@ const Cavallini = () => {
         <span className="stat-value">{fundStats.inceptionDate || 'Jan. 16th, 2024'}</span>
       </div>
       <div className="stat-item best-month">
-        <span className="stat-label">Best Month</span>
+        <span className="stat-label">Best Month:</span>
         <span className="stat-value">{fundStats.bestMonth}</span>
       </div>
       <div className="stat-item worst-month">
-        <span className="stat-label">Worst Month</span>
+        <span className="stat-label">Worst Month:</span>
         <span className="stat-value">{fundStats.worstMonth}</span>
       </div>
       <div className="stat-item perf-since-inception">
-        <span className="stat-label">Performance Since Inception</span>
+        <span className="stat-label">Performance Since Inception:</span>
         <span className="stat-value">{fundStats.perfSinceInception}</span>
       </div>
       <div className="stat-item perf-annualized">
-        <span className="stat-label">Performance Annualized</span>
+        <span className="stat-label">Performance Annualized:</span>
         <span className="stat-value">{fundStats.perfAnnualized}</span>
       </div>
       <div className="stat-item sharpe-ratio">
-        <span className="stat-label">Sharpe Ratio</span>
+        <span className="stat-label">Sharpe Ratio:</span>
         <span className="stat-value">{sharpeRatio}</span>
       </div>
       <div className="stat-item sortino-ratio">
@@ -197,7 +197,7 @@ const Cavallini = () => {
         <span className="stat-value">{sortinoRatio}</span>
       </div>
       <div className="stat-item correlation-sp500">
-        <span className="stat-label">Correlation to S&amp;P</span>
+        <span className="stat-label">Correlation to S&amp;P:</span>
         <span className="stat-value">{correlationSP500}</span>
       </div>
       <div className="stat-item daily-var">
@@ -213,10 +213,10 @@ const Cavallini = () => {
 
   {/* What We Do Section - now second */}
   <div className="what-we-do">
-    <h3>WHAT WE DO:</h3>
+    <h3>WHAT WE DO</h3>
     <p>
       Deliver consistent, single-digit returns 
-      by strategically managing Long-Short 
+      by strategically managing Long-Short Market Neutral
       equity positions while minimizing 
       volatility. We employ prudent 
       leverage to amplify those returns, 
