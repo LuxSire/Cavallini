@@ -193,7 +193,7 @@ const Cavallini = () => {
         <span className="stat-value">{sharpeRatio}</span>
       </div>
       <div className="stat-item sortino-ratio">
-        <span className="stat-label">Sortino Ratio</span>
+        <span className="stat-label">Sortino Ratio:</span>
         <span className="stat-value">{sortinoRatio}</span>
       </div>
       <div className="stat-item correlation-sp500">
