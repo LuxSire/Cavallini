@@ -114,47 +114,68 @@ export const loadCSV = (setDates, setDailyReturns, candidateUrl = '/Returns.csv'
           tryFetch(i+1);
           return;
         }
-        Papa.parse(csvText, {
-          header: false,
-          skipEmptyLines: true,
-          complete: (results) => {
-            if (!results.data.length) { console.warn('[loadReturnsCSV] No rows.'); return; }
-            const data = results.data.filter(r => r.some(c => c && c.trim() !== ''));
-            let rows = data;
-            if (rows.length && (rows[0][0].toLowerCase().includes('date') || rows[0][1].toLowerCase().includes('return') || rows[0][1].toLowerCase().includes('value'))) {
-              rows = rows.slice(1);
-            }
-            const parsedDates = [];
-            const parsedDailyReturns = [];
-            let euDateConvertedCount = 0;
-            rows.forEach(row => {
-              if (!row || row.length < 2) return;
-              let raw = (row[0]||'').trim();
-              let iso;
-              if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(raw)) iso = raw;
-              else if (/^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$/.test(raw)) { const [dd,mm,yyyy]=raw.split('.'); iso=`${yyyy}-${mm}-${dd}`; euDateConvertedCount++; }
-              else return;
-              let value;
-              // Special handling for RF.csv: divide second column by 100, ignore third column
-              if (url.includes('RF.csv')) {
-                value = sanitizeNumber(row[1]) / 100;
-              } else {
-                value = sanitizeNumber(row[1]);
-              }
-              if (isNaN(value)) return;
-              parsedDates.push(iso);
-              parsedDailyReturns.push(value);
-            });
-            if (euDateConvertedCount) console.log(`[loadReturnsCSV] Converted ${euDateConvertedCount} EU date formats.`);
-            const nanCount = parsedDailyReturns.filter(v=>isNaN(v)).length;
-            if (nanCount) console.warn(`[loadReturnsCSV] NaN daily returns count: ${nanCount}`);
-            setDates(parsedDates);
-            setDailyReturns(parsedDailyReturns);
-          },
-          error: (err) => {
-            tryFetch(i+1);
+        // Split lines manually for robust parsing
+        const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+        let rows = [];
+        for (let idx = 0; idx < lines.length; idx++) {
+          let line = lines[idx].trim();
+          if (!line) continue;
+          // Try both comma and tab as delimiter
+          let row = line.split(',');
+          if (row.length < 2) row = line.split('\t');
+          if (row.length < 2) {
+            console.warn(`[loadCSV] Skipping line ${idx+1}: cannot split into 2 columns:`, line);
+            continue;
           }
+          // Remove extra whitespace from each cell
+          row = row.map(cell => (cell || '').trim());
+          rows.push(row);
+        }
+        // Remove header if present
+        if (rows.length && (rows[0][0].toLowerCase().includes('date') || (rows[0][1] && rows[0][1].toLowerCase().includes('return')) || (rows[0][1] && rows[0][1].toLowerCase().includes('value')))) {
+          rows = rows.slice(1);
+        }
+        const parsedDates = [];
+        const parsedDailyReturns = [];
+        let euDateConvertedCount = 0;
+        let skippedLines = 0;
+        rows.forEach((row, idx) => {
+          if (!row || row.length < 2) {
+            console.warn(`[loadCSV] Skipping row ${idx+1}: not enough columns`, row);
+            skippedLines++;
+            return;
+          }
+          let raw = (row[0]||'').trim();
+          let iso;
+          if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(raw)) iso = raw;
+          else if (/^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$/.test(raw)) { const [dd,mm,yyyy]=raw.split('.'); iso=`${yyyy}-${mm}-${dd}`; euDateConvertedCount++; }
+          else if (/^[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4}$/.test(raw)) { let [dd,mm,yyyy]=raw.split('.'); if (dd.length===1) dd='0'+dd; if (mm.length===1) mm='0'+mm; iso=`${yyyy}-${mm}-${dd}`; euDateConvertedCount++; }
+          else {
+            console.warn(`[loadCSV] Skipping row ${idx+1}: unrecognized date format:`, raw);
+            skippedLines++;
+            return;
+          }
+          let value;
+          // Special handling for RF.csv: divide second column by 100, ignore third column
+          if (url.includes('RF.csv')) {
+            value = sanitizeNumber(row[1]) / 100;
+          } else {
+            value = sanitizeNumber(row[1]);
+          }
+          if (isNaN(value)) {
+            console.warn(`[loadCSV] Skipping row ${idx+1}: value is NaN:`, row[1]);
+            skippedLines++;
+            return;
+          }
+          parsedDates.push(iso);
+          parsedDailyReturns.push(value);
         });
+        if (euDateConvertedCount) console.log(`[loadCSV] Converted ${euDateConvertedCount} EU date formats.`);
+        if (skippedLines) console.warn(`[loadCSV] Skipped ${skippedLines} lines due to format issues.`);
+        const nanCount = parsedDailyReturns.filter(v=>isNaN(v)).length;
+        if (nanCount) console.warn(`[loadCSV] NaN daily returns count: ${nanCount}`);
+        setDates(parsedDates);
+        setDailyReturns(parsedDailyReturns);
       })
       .catch(err => {
         tryFetch(i+1);
