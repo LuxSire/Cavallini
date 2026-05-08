@@ -288,3 +288,156 @@ footer h4 {
   align-items: center;
   gap: 1rem; /* Adjust spacing as needed */
 }
+
+/* Tablet Responsive Design (768px and below) */
+@media (max-width: 768px) {
+  .cavallini-capital {
+    padding: 1.5rem;
+  }
+
+  .header-section.flex-row {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .brand h1 {
+    font-size: 2rem;
+  }
+
+  .brand h2 {
+    font-size: 1.5rem;
+  }
+
+  .profile {
+    width: 140px;
+    height: 140px;
+  }
+
+  .main-content.flex-row {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .stats-container {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .ring {
+    width: 280px;
+    height: 280px;
+  }
+
+  .ring::after {
+    inset: 30px;
+  }
+
+  table {
+    font-size: 0.8rem;
+  }
+
+  th,
+  td {
+    padding: 4px;
+  }
+
+  .what-we-do {
+    max-width: 100%;
+  }
+
+  .pitch p {
+    max-width: 100%;
+  }
+
+  .header {
+    gap: 1rem;
+  }
+}
+
+/* Mobile Responsive Design (640px and below) */
+@media (max-width: 640px) {
+  .cavallini-capital {
+    padding: 1rem;
+  }
+
+  .brand h1 {
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+  }
+
+  .brand h2 {
+    font-size: 1.2rem;
+  }
+
+  .profile {
+    width: 100px;
+    height: 100px;
+  }
+
+  .pitch h2 {
+    font-size: 1.2rem;
+  }
+
+  .pitch h3 {
+    font-size: 0.9rem;
+  }
+
+  .what-we-do h3 {
+    font-size: 1rem;
+  }
+
+  .what-we-do p,
+  .pitch p {
+    font-size: 0.9rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .ring {
+    width: 240px;
+    height: 240px;
+  }
+
+  .ring::after {
+    inset: 25px;
+  }
+
+  .stat strong {
+    font-size: 1.1rem;
+  }
+
+  .stat span {
+    font-size: 0.65rem;
+  }
+
+  table {
+    font-size: 0.7rem;
+  }
+
+  th,
+  td {
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .returns-table-container {
+    overflow-x: auto;
+  }
+
+  .strategy-info p {
+    font-size: 0.9rem;
+  }
+
+  footer.disclaimer {
+    padding: 0.75rem;
+    font-size: 0.7rem;
+  }
+
+  footer h4 {
+    font-size: 0.9rem;
+  }
+}
